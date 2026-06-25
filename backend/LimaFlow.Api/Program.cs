@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
-using LimaFlow.Api.Models; // Asegúrate de que esto coincida con tu namespace
+using LimaFlow.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 1. Agrega esto para registrar los controladores en el sistema
+builder.Services.AddControllers(); 
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -14,7 +16,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -23,5 +24,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Aquí irán tus propios endpoints en el futuro
+// 2. Agrega esto para que el API sepa cómo direccionar las peticiones a los controladores
+app.MapControllers(); 
+
 app.Run();

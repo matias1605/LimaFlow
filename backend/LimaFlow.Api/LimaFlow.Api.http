@@ -1,0 +1,6 @@
+@LimaFlow.Api_HostAddress = http://localhost:5139
+
+GET {{LimaFlow.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

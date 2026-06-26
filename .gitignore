@@ -1,0 +1,11 @@
+# Ignorar archivos generados automáticamente por .NET
+bin/
+obj/
+*.user
+*.lock.json
+.vs/
+.vscode/
+
+# Ignorar la configuración de la base de datos local si fuera necesario
+# o archivos de entorno si tuvieras secretos
+appsettings.Development.json

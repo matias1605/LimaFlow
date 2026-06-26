@@ -6,13 +6,12 @@ namespace LimaFlow.Api.Models;
 [Table("vias")] // El nombre de la tabla en Postgres
 public class Via
 {
-    [Key]
-    [Column("id")] // Mapeo exacto a la columna minúscula
     public int Id { get; set; }
 
-    [Column("nombre")] // Mapeo exacto
+    [Required(ErrorMessage = "El nombre de la vía es obligatorio.")]
+    [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres.")]
     public string Nombre { get; set; } = string.Empty;
 
-    [Column("zonaid")] // Mapeo exacto
+    [Required(ErrorMessage = "El zonaid es obligatorio.")]
     public int ZonaId { get; set; }
 }

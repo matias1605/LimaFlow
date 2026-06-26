@@ -15,20 +15,15 @@ public class ViasController : ControllerBase
         _context = context;
     }
 
-    // GET: api/vias
-   [HttpGet("{id}")]
-public async Task<ActionResult<Via>> GetVias(int id)
-{
-    // Buscamos la vía por su ID en la base de datos
-    var via = await _context.Vias.FindAsync(id);
-
-    // Si no existe, devolvemos un 404 (Not Found)
-    if (via == null)
+    // GET: api/vias (Lista completa)
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Via>>> GetVias()
     {
         return await _context.Vias.ToListAsync();
-    } // <--- Asegúrate de cerrar el método aquí
+    }
 
-    [HttpGet("{id}")] // Agregué este para que el POST pueda hacer referencia al GetVia
+    // GET: api/vias/5 (Una sola vía)
+    [HttpGet("{id}")]
     public async Task<ActionResult<Via>> GetVia(int id)
     {
         var via = await _context.Vias.FindAsync(id);
@@ -36,6 +31,7 @@ public async Task<ActionResult<Via>> GetVias(int id)
         return via;
     }
 
+    // POST: api/vias
     [HttpPost]
     public async Task<ActionResult<Via>> CreateVia(Via via)
     {
@@ -44,6 +40,7 @@ public async Task<ActionResult<Via>> GetVias(int id)
         return CreatedAtAction(nameof(GetVia), new { id = via.Id }, via);
     }
 
+    // DELETE: api/vias/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteVia(int id)
     {
@@ -58,19 +55,4 @@ public async Task<ActionResult<Via>> GetVias(int id)
 
         return NoContent();
     }
-
-    return via;
-}
-    [HttpPost]
-public async Task<ActionResult<Via>> CreateVia(Via via)
-{
-    // Agregamos la vía al DbSet
-    _context.Vias.Add(via);
-    
-    // Guardamos los cambios en la base de datos (Postgres)
-    await _context.SaveChangesAsync();
-
-    // Retornamos el objeto creado con un código 201 (Created)
-    return CreatedAtAction(nameof(GetVias), new { id = via.Id }, via);
-}
 }

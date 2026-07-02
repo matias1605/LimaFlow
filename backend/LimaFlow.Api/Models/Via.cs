@@ -22,4 +22,9 @@ public class Via
     // Esta es la clave para el Eager Loading
     [ForeignKey("ZonaId")]
     public Zona? Zona { get; set; }
+
+    [Column("categoria_id")]
+    public int? CategoriaId { get; set; }
+    [ForeignKey("CategoriaId")]
+    public Categoria? Categoria { get; set; }
 }

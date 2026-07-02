@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using LimaFlow.Api.Models;
-using LimaFlow.Api.Middlewares; // <--- ¡Asegúrate de agregar esta línea!
+using LimaFlow.Api.Middlewares; 
+using LimaFlow.Api.Validators; // <--- ¡Asegúrate de agregar esta línea!
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Agrega esto para registrar los controladores en el sistema
+// Registra los controladores en el sistema
 builder.Services.AddControllers(); 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -15,10 +17,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-    builder.Services.AddProblemDetails(); // Agrega soporte nativo para detalles de problemas
+// Registro del manejador global de errores
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails(); 
+
+// Registrar FluentValidation buscando los validadores del proyecto
+builder.Services.AddValidatorsFromAssemblyContaining<IncidenciaValidator>();
+    
 var app = builder.Build();
-app.UseExceptionHandler(); // <--- ¡Esto atrapa los errores en el aire!
+
+// El middleware de excepciones siempre va primero
+app.UseExceptionHandler(); 
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -27,7 +37,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// 2. Agrega esto para que el API sepa cómo direccionar las peticiones a los controladores
+// Direcciona las peticiones a los controladores
 app.MapControllers(); 
 
 app.Run();

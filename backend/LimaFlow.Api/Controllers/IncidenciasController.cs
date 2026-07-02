@@ -19,6 +19,7 @@ public class IncidenciasController : ControllerBase
     // GET: api/Incidencias?estado=2&viaId=8
 [HttpGet]
 public async Task<ActionResult<IEnumerable<IncidenciaDto>>> GetIncidencias(
+    
     [FromQuery] EstadoIncidencia? estado, 
     [FromQuery] int? viaId)
 {

@@ -27,4 +27,9 @@ public class Incidencia
 
     [Column("fecha_registro")]
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
+
+    // Añade esto dentro de la clase Incidencia en Incidencia.cs
+    [Required]
+    [Column("estado")]
+    public EstadoIncidencia Estado { get; set; } = EstadoIncidencia.Reportada;
 }

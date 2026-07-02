@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using LimaFlow.Api.Models;
+using LimaFlow.Api.Middlewares; // <--- ¡Asegúrate de agregar esta línea!
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +15,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+    builder.Services.AddProblemDetails(); // Agrega soporte nativo para detalles de problemas
 var app = builder.Build();
-
+app.UseExceptionHandler(); // <--- ¡Esto atrapa los errores en el aire!
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

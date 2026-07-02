@@ -19,4 +19,7 @@ public class Via
     [Required(ErrorMessage = "El zonaid es obligatorio.")]
     [Column("zonaid")]
     public int ZonaId { get; set; }
+    // Esta es la clave para el Eager Loading
+    [ForeignKey("ZonaId")]
+    public Zona? Zona { get; set; }
 }

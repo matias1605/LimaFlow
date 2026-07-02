@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LimaFlow.Api.Models;
+using LimaFlow.Api.DTOs;
 
 namespace LimaFlow.Api.Controllers;
 
@@ -15,18 +16,36 @@ public class ViasController : ControllerBase
         _context = context;
     }
 
-    // GET: api/vias (Lista completa)
+    // GET: api/vias
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Via>>> GetVias()
+    public async Task<ActionResult<IEnumerable<ViaDto>>> GetVias()
     {
-        return await _context.Vias.ToListAsync();
+        return await _context.Vias
+            .Include(v => v.Zona)
+            .Select(v => new ViaDto
+            {
+                Id = v.Id,
+                Nombre = v.Nombre,
+                NombreZona = v.Zona != null ? v.Zona.Nombre : "Sin Zona"
+            })
+            .ToListAsync();
     }
 
-    // GET: api/vias/5 (Una sola vía)
+    // GET: api/vias/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Via>> GetVia(int id)
+    public async Task<ActionResult<ViaDto>> GetVia(int id)
     {
-        var via = await _context.Vias.FindAsync(id);
+        var via = await _context.Vias
+            .Include(v => v.Zona)
+            .Where(v => v.Id == id)
+            .Select(v => new ViaDto
+            {
+                Id = v.Id,
+                Nombre = v.Nombre,
+                NombreZona = v.Zona != null ? v.Zona.Nombre : "Sin Zona"
+            })
+            .FirstOrDefaultAsync();
+
         if (via == null) return NotFound();
         return via;
     }
@@ -37,6 +56,8 @@ public class ViasController : ControllerBase
     {
         _context.Vias.Add(via);
         await _context.SaveChangesAsync();
+        
+        // Retornamos el objeto creado
         return CreatedAtAction(nameof(GetVia), new { id = via.Id }, via);
     }
 
@@ -45,10 +66,7 @@ public class ViasController : ControllerBase
     public async Task<IActionResult> DeleteVia(int id)
     {
         var via = await _context.Vias.FindAsync(id);
-        if (via == null)
-        {
-            return NotFound(new { mensaje = $"No se puede eliminar: La vía con ID {id} no existe." });
-        }
+        if (via == null) return NotFound(new { mensaje = "La vía no existe." });
 
         _context.Vias.Remove(via);
         await _context.SaveChangesAsync();

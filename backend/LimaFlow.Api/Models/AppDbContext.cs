@@ -16,7 +16,7 @@ public class AppDbContext : DbContext
 
         // 2. Agrega la configuración de la relación (Foreign Key)
     modelBuilder.Entity<Via>()
-        .HasOne<Zona>()
+        .HasOne(v => v.Zona)
         .WithMany(z => z.Vias)
         .HasForeignKey(v => v.ZonaId);
     

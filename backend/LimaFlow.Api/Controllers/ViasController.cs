@@ -22,10 +22,13 @@ public class ViasController : ControllerBase
     {
         return await _context.Vias
             .Include(v => v.Zona)
+            .Include(v => v.Categoria)  
             .Select(v => new ViaDto
             {
                 Id = v.Id,
                 Nombre = v.Nombre,
+                CategoriaId = v.CategoriaId,
+                NombreCategoria = v.Categoria != null ? v.Categoria.Nombre : "Sin Categoría",
                 NombreZona = v.Zona != null ? v.Zona.Nombre : "Sin Zona"
             })
             .ToListAsync();
@@ -37,12 +40,15 @@ public class ViasController : ControllerBase
     {
         var via = await _context.Vias
             .Include(v => v.Zona)
+            .Include(v => v.Categoria)  // <--- Agrega la nueva relación con Categoría
             .Where(v => v.Id == id)
             .Select(v => new ViaDto
             {
                 Id = v.Id,
                 Nombre = v.Nombre,
-                NombreZona = v.Zona != null ? v.Zona.Nombre : "Sin Zona"
+                NombreZona = v.Zona != null ? v.Zona.Nombre : "Sin Zona",
+                CategoriaId = v.CategoriaId,
+                NombreCategoria = v.Categoria != null ? v.Categoria.Nombre : "Sin Categoría"
             })
             .FirstOrDefaultAsync();
 
@@ -54,6 +60,15 @@ public class ViasController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Via>> CreateVia(Via via)
     {
+        // Validación de seguridad: si envían un categoriaId, verificamos que exista en Postgres
+        if (via.CategoriaId.HasValue)
+        {
+            var categoriaExiste = await _context.Categorias.AnyAsync(c => c.Id == via.CategoriaId.Value);
+            if (!categoriaExiste)
+            {
+                return BadRequest(new { mensaje = $"La categoría con ID {via.CategoriaId} no existe." });
+            }
+        }
         _context.Vias.Add(via);
         await _context.SaveChangesAsync();
         

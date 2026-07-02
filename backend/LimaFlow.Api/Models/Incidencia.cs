@@ -18,12 +18,12 @@ public class Incidencia
     // Relación con Vía
     [Column("via_id")]
     public int ViaId { get; set; }
-    public Via Via { get; set; } = null!;
+    public Via? Via { get; set; } = null!;
 
     // Relación con Usuario
     [Column("usuario_id")]
     public int UsuarioId { get; set; }
-    public Usuario Usuario { get; set; } = null!;
+    public Usuario? Usuario { get; set; } = null!;
 
     [Column("fecha_registro")]
     public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;

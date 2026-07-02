@@ -16,24 +16,42 @@ public class IncidenciasController : ControllerBase
         _context = context;
     }
 
-    // GET: api/Incidencias
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<IncidenciaDto>>> GetIncidencias()
+    // GET: api/Incidencias?estado=2&viaId=8
+[HttpGet]
+public async Task<ActionResult<IEnumerable<IncidenciaDto>>> GetIncidencias(
+    [FromQuery] EstadoIncidencia? estado, 
+    [FromQuery] int? viaId)
+{
+    // 1. Preparamos la consulta sin ejecutarla aún (IQueryable)
+    IQueryable<Incidencia> query = _context.Incidencias
+        .Include(i => i.Via)
+        .Include(i => i.Usuario);
+
+    // 2. Si el usuario envió un estado, filtramos por estado
+    if (estado.HasValue)
     {
-        return await _context.Incidencias
-            .Include(i => i.Via)
-            .Include(i => i.Usuario)
-            .Select(i => new IncidenciaDto
-            {
-                Id = i.Id,
-                Descripcion = i.Descripcion,
-                NombreVia = i.Via != null ? i.Via.Nombre : "Vía no especificada",
-                NombreUsuario = i.Usuario != null ? i.Usuario.Nombre : "Anónimo",
-                FechaRegistro = i.FechaRegistro,
-                Estado = i.Estado.ToString()
-            })
-            .ToListAsync();
+        query = query.Where(i => i.Estado == estado.Value);
     }
+
+    // 3. Si el usuario envió un viaId, filtramos por esa vía específica
+    if (viaId.HasValue)
+    {
+        query = query.Where(i => i.ViaId == viaId.Value);
+    }
+
+    // 4. Proyectamos al DTO y ejecutamos la consulta en la base de datos
+    return await query
+        .Select(i => new IncidenciaDto
+        {
+            Id = i.Id,
+            Descripcion = i.Descripcion,
+            NombreVia = i.Via != null ? i.Via.Nombre : "Vía no especificada",
+            NombreUsuario = i.Usuario != null ? i.Usuario.Nombre : "Anónimo",
+            FechaRegistro = i.FechaRegistro,
+            Estado = i.Estado.ToString()
+        })
+        .ToListAsync();
+}
 
     // POST: api/Incidencias
     [HttpPost]

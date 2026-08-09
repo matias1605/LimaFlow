@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LimaFlow.Api.DTOs;
 using LimaFlow.Api.Models;
@@ -26,6 +27,7 @@ public class CategoriasController : ControllerBase
 
     // POST: api/Categorias
     [HttpPost]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<ActionResult<Categoria>> CreateCategoria(Categoria categoria)
     {
         var creada = await _service.CreateAsync(categoria);

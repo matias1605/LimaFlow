@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LimaFlow.Api.DTOs;
 using LimaFlow.Api.Models;
@@ -35,6 +36,7 @@ public class ViasController : ControllerBase
 
     // POST: api/vias
     [HttpPost]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<ActionResult<Via>> CreateVia(Via via)
     {
         var result = await _service.CreateAsync(via);
@@ -47,6 +49,7 @@ public class ViasController : ControllerBase
 
     // DELETE: api/vias/5
     [HttpDelete("{id}")]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<IActionResult> DeleteVia(int id)
     {
         var result = await _service.DeleteAsync(id);

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LimaFlow.Api.Models;
 using LimaFlow.Api.DTOs;
+using LimaFlow.Api.Repositories;
 
 namespace LimaFlow.Api.Controllers;
 
@@ -9,18 +10,18 @@ namespace LimaFlow.Api.Controllers;
 [Route("api/[controller]")]
 public class ViasController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ViasController(AppDbContext context)
+    public ViasController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     // GET: api/vias
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ViaDto>>> GetVias()
     {
-        return await _context.Vias
+        return await _unitOfWork.Vias.GetAll()
             .Include(v => v.Zona)
             .Include(v => v.Categoria)  
             .Select(v => new ViaDto
@@ -38,7 +39,7 @@ public class ViasController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ViaDto>> GetVia(int id)
     {
-        var via = await _context.Vias
+        var via = await _unitOfWork.Vias.GetAll()
             .Include(v => v.Zona)
             .Include(v => v.Categoria)  // <--- Agrega la nueva relación con Categoría
             .Where(v => v.Id == id)
@@ -63,14 +64,15 @@ public class ViasController : ControllerBase
         // Validación de seguridad: si envían un categoriaId, verificamos que exista en Postgres
         if (via.CategoriaId.HasValue)
         {
-            var categoriaExiste = await _context.Categorias.AnyAsync(c => c.Id == via.CategoriaId.Value);
+            var categoriaExiste = await _unitOfWork.Categorias.GetAll()
+                .AnyAsync(c => c.Id == via.CategoriaId.Value);
             if (!categoriaExiste)
             {
                 return BadRequest(new { mensaje = $"La categoría con ID {via.CategoriaId} no existe." });
             }
         }
-        _context.Vias.Add(via);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Vias.AddAsync(via);
+        await _unitOfWork.SaveChangesAsync();
         
         // Retornamos el objeto creado
         return CreatedAtAction(nameof(GetVia), new { id = via.Id }, via);
@@ -80,11 +82,11 @@ public class ViasController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteVia(int id)
     {
-        var via = await _context.Vias.FindAsync(id);
+        var via = await _unitOfWork.Vias.GetByIdAsync(id);
         if (via == null) return NotFound(new { mensaje = "La vía no existe." });
 
-        _context.Vias.Remove(via);
-        await _context.SaveChangesAsync();
+        _unitOfWork.Vias.Remove(via);
+        await _unitOfWork.SaveChangesAsync();
 
         return NoContent();
     }

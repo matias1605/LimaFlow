@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using LimaFlow.Api.Models;
-using LimaFlow.Api.Middlewares; 
+using LimaFlow.Api.Middlewares;
 using LimaFlow.Api.Validators; // <--- ¡Asegúrate de agregar esta línea!
+using LimaFlow.Api.Repositories;
 using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,10 @@ builder.Services.AddSwaggerGen();
 // Configuración de la conexión a PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Patrón Repository + Unit of Work (desacopla el acceso a datos de los controladores)
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Registro del manejador global de errores
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

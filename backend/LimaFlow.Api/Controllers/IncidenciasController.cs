@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LimaFlow.Api.Models;
 using LimaFlow.Api.DTOs;
+using LimaFlow.Api.Repositories;
 using FluentValidation;
 
 namespace LimaFlow.Api.Controllers;
@@ -10,11 +11,11 @@ namespace LimaFlow.Api.Controllers;
 [Route("api/[controller]")]
 public class IncidenciasController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public IncidenciasController(AppDbContext context)
+    public IncidenciasController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
 // GET: api/Incidencias?pageNumber=1&pageSize=10
@@ -30,7 +31,7 @@ public async Task<ActionResult<PagedResultDto<IncidenciaDto>>> GetIncidencias(
     if (pageSize < 1 || pageSize > 50) pageSize = 10; // Límite máximo de 50 por página
 
     // 2. Preparamos la consulta base (sin ejecutarla aún)
-    IQueryable<Incidencia> query = _context.Incidencias
+    IQueryable<Incidencia> query = _unitOfWork.Incidencias.GetAll()
         .Include(i => i.Via)
         .Include(i => i.Usuario);
 
@@ -98,8 +99,8 @@ public async Task<ActionResult<Incidencia>> CreateIncidencia(
     // 3. Si todo está bien, guardamos la incidencia en la base de datos
     incidencia.FechaRegistro = DateTime.UtcNow;
 
-    _context.Incidencias.Add(incidencia);
-    await _context.SaveChangesAsync();
+    await _unitOfWork.Incidencias.AddAsync(incidencia);
+    await _unitOfWork.SaveChangesAsync();
 
     return CreatedAtAction(nameof(GetIncidencias), new { id = incidencia.Id }, incidencia);
 }
@@ -109,7 +110,7 @@ public async Task<ActionResult<Incidencia>> CreateIncidencia(
     public async Task<IActionResult> CambiarEstado(int id, [FromBody] CambiarEstadoDto dto)
     {
     // 1. Buscar la incidencia en la base de datos
-    var incidencia = await _context.Incidencias.FindAsync(id);
+    var incidencia = await _unitOfWork.Incidencias.GetByIdAsync(id);
 
     // 2. Si no existe, retornar un error 404
     if (incidencia == null)
@@ -121,7 +122,8 @@ public async Task<ActionResult<Incidencia>> CreateIncidencia(
     incidencia.Estado = dto.NuevoEstado;
 
     // 4. Guardar los cambios en PostgreSQL
-    await _context.SaveChangesAsync();
+    _unitOfWork.Incidencias.Update(incidencia);
+    await _unitOfWork.SaveChangesAsync();
 
     // 5. Responder con un mensaje amigable y el estado en texto
     return Ok(new { 

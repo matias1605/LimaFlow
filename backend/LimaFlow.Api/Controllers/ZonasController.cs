@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LimaFlow.Api.Models;
+using LimaFlow.Api.Repositories;
 
 namespace LimaFlow.Api.Controllers;
 
@@ -8,27 +9,27 @@ namespace LimaFlow.Api.Controllers;
 [Route("api/[controller]")]
 public class ZonasController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ZonasController(AppDbContext context)
+    public ZonasController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     // GET: api/zonas
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Zona>>> GetZonas()
     {
-        return await _context.Zonas.ToListAsync();
+        return await _unitOfWork.Zonas.GetAll().ToListAsync();
     }
 
     // POST: api/zonas
     [HttpPost]
     public async Task<ActionResult<Zona>> CreateZona(Zona zona)
     {
-        _context.Zonas.Add(zona);
-        await _context.SaveChangesAsync();
-        
+        await _unitOfWork.Zonas.AddAsync(zona);
+        await _unitOfWork.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetZonas), new { id = zona.Id }, zona);
     }
 
@@ -36,14 +37,14 @@ public class ZonasController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteZona(int id)
     {
-        var zona = await _context.Zonas.FindAsync(id);
+        var zona = await _unitOfWork.Zonas.GetByIdAsync(id);
         if (zona == null)
         {
             return NotFound(new { mensaje = $"No se puede eliminar: La zona con ID {id} no existe." });
         }
 
-        _context.Zonas.Remove(zona);
-        await _context.SaveChangesAsync();
+        _unitOfWork.Zonas.Remove(zona);
+        await _unitOfWork.SaveChangesAsync();
 
         return NoContent();
     }

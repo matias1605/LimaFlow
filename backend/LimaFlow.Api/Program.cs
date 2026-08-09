@@ -4,6 +4,7 @@ using LimaFlow.Api.Models;
 using LimaFlow.Api.Middlewares;
 using LimaFlow.Api.Validators; // <--- ¡Asegúrate de agregar esta línea!
 using LimaFlow.Api.Repositories;
+using LimaFlow.Api.Services;
 using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Patrón Repository + Unit of Work (desacopla el acceso a datos de los controladores)
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Capa de servicios (lógica de negocio; los controladores solo orquestan HTTP)
+builder.Services.AddScoped<IIncidenciaService, IncidenciaService>();
+builder.Services.AddScoped<IViaService, ViaService>();
+builder.Services.AddScoped<IZonaService, ZonaService>();
+builder.Services.AddScoped<ICategoriaService, CategoriaService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
 // Registro del manejador global de errores
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

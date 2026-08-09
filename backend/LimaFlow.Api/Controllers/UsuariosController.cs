@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LimaFlow.Api.Models;
 using LimaFlow.Api.DTOs;
-using LimaFlow.Api.Repositories;
+using LimaFlow.Api.Models;
+using LimaFlow.Api.Services;
 
 namespace LimaFlow.Api.Controllers;
 
@@ -10,33 +9,26 @@ namespace LimaFlow.Api.Controllers;
 [Route("api/[controller]")]
 public class UsuariosController : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUsuarioService _service;
 
-    public UsuariosController(IUnitOfWork unitOfWork)
+    public UsuariosController(IUsuarioService service)
     {
-        _unitOfWork = unitOfWork;
+        _service = service;
     }
 
     // GET: api/Usuarios
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UsuarioDto>>> GetUsuarios()
     {
-        return await _unitOfWork.Usuarios.GetAll()
-            .Select(u => new UsuarioDto
-            {
-                Id = u.Id,
-                Nombre = u.Nombre
-            })
-            .ToListAsync();
+        var usuarios = await _service.GetAllAsync();
+        return Ok(usuarios);
     }
 
     // POST: api/Usuarios
     [HttpPost]
     public async Task<ActionResult<Usuario>> CreateUsuario(Usuario usuario)
     {
-        await _unitOfWork.Usuarios.AddAsync(usuario);
-        await _unitOfWork.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetUsuarios), new { id = usuario.Id }, usuario);
+        var creado = await _service.CreateAsync(usuario);
+        return CreatedAtAction(nameof(GetUsuarios), new { id = creado.Id }, creado);
     }
 }

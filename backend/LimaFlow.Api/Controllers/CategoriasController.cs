@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using LimaFlow.Api.Models;
 using LimaFlow.Api.DTOs;
-using LimaFlow.Api.Repositories;
+using LimaFlow.Api.Models;
+using LimaFlow.Api.Services;
 
 namespace LimaFlow.Api.Controllers;
 
@@ -10,33 +9,26 @@ namespace LimaFlow.Api.Controllers;
 [Route("api/[controller]")]
 public class CategoriasController : ControllerBase
 {
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICategoriaService _service;
 
-    public CategoriasController(IUnitOfWork unitOfWork)
+    public CategoriasController(ICategoriaService service)
     {
-        _unitOfWork = unitOfWork;
+        _service = service;
     }
 
     // GET: api/Categorias
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoriaDto>>> GetCategorias()
     {
-        return await _unitOfWork.Categorias.GetAll()
-            .Select(c => new CategoriaDto
-            {
-                Id = c.Id,
-                Nombre = c.Nombre
-            })
-            .ToListAsync();
+        var categorias = await _service.GetAllAsync();
+        return Ok(categorias);
     }
 
     // POST: api/Categorias
     [HttpPost]
     public async Task<ActionResult<Categoria>> CreateCategoria(Categoria categoria)
     {
-        await _unitOfWork.Categorias.AddAsync(categoria);
-        await _unitOfWork.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetCategorias), new { id = categoria.Id }, categoria);
+        var creada = await _service.CreateAsync(categoria);
+        return CreatedAtAction(nameof(GetCategorias), new { id = creada.Id }, creada);
     }
 }

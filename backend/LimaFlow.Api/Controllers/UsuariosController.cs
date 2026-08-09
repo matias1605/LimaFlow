@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LimaFlow.Api.Models;
 using LimaFlow.Api.DTOs;
+using LimaFlow.Api.Repositories;
 
 namespace LimaFlow.Api.Controllers;
 
@@ -9,18 +10,18 @@ namespace LimaFlow.Api.Controllers;
 [Route("api/[controller]")]
 public class UsuariosController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UsuariosController(AppDbContext context)
+    public UsuariosController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     // GET: api/Usuarios
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UsuarioDto>>> GetUsuarios()
     {
-        return await _context.Usuarios
+        return await _unitOfWork.Usuarios.GetAll()
             .Select(u => new UsuarioDto
             {
                 Id = u.Id,
@@ -33,8 +34,8 @@ public class UsuariosController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Usuario>> CreateUsuario(Usuario usuario)
     {
-        _context.Usuarios.Add(usuario);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Usuarios.AddAsync(usuario);
+        await _unitOfWork.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetUsuarios), new { id = usuario.Id }, usuario);
     }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LimaFlow.Api.Models;
 using LimaFlow.Api.DTOs;
+using LimaFlow.Api.Repositories;
 
 namespace LimaFlow.Api.Controllers;
 
@@ -9,18 +10,18 @@ namespace LimaFlow.Api.Controllers;
 [Route("api/[controller]")]
 public class CategoriasController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CategoriasController(AppDbContext context)
+    public CategoriasController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     // GET: api/Categorias
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoriaDto>>> GetCategorias()
     {
-        return await _context.Categorias
+        return await _unitOfWork.Categorias.GetAll()
             .Select(c => new CategoriaDto
             {
                 Id = c.Id,
@@ -33,8 +34,8 @@ public class CategoriasController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Categoria>> CreateCategoria(Categoria categoria)
     {
-        _context.Categorias.Add(categoria);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.Categorias.AddAsync(categoria);
+        await _unitOfWork.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetCategorias), new { id = categoria.Id }, categoria);
     }

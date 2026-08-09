@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LimaFlow.Api.Models;
 using LimaFlow.Api.Services;
@@ -25,6 +26,7 @@ public class ZonasController : ControllerBase
 
     // POST: api/zonas
     [HttpPost]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<ActionResult<Zona>> CreateZona(Zona zona)
     {
         var creada = await _service.CreateAsync(zona);
@@ -33,6 +35,7 @@ public class ZonasController : ControllerBase
 
     // DELETE: api/zonas/5
     [HttpDelete("{id}")]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<IActionResult> DeleteZona(int id)
     {
         var result = await _service.DeleteAsync(id);

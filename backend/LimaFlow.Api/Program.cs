@@ -1,46 +1,108 @@
+using System.Text;
+using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
-using LimaFlow.Api.Models;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using LimaFlow.Api.Middlewares;
-using LimaFlow.Api.Validators; // <--- ¡Asegúrate de agregar esta línea!
+using LimaFlow.Api.Models;
 using LimaFlow.Api.Repositories;
 using LimaFlow.Api.Services;
-using FluentValidation;
+using LimaFlow.Api.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Registra los controladores en el sistema
-builder.Services.AddControllers(); 
-
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// Configuración de la conexión a PostgreSQL
+// Swagger con soporte para JWT Bearer (para poder probar endpoints protegidos desde la UI).
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Ingresá el token JWT así: Bearer {token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+// PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Patrón Repository + Unit of Work (desacopla el acceso a datos de los controladores)
+// ASP.NET Core Identity sobre AppDbContext
+builder.Services
+    .AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.Password.RequiredLength = 6;
+        options.Password.RequireNonAlphanumeric = false;
+        options.User.RequireUniqueEmail = true;
+    })
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+// Autenticación JWT Bearer
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Falta configuración Jwt:Key.");
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidAudience = jwtSection["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// Manejador global de errores
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<IncidenciaValidator>();
+
+// Repository + Unit of Work
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// Capa de servicios (lógica de negocio; los controladores solo orquestan HTTP)
+// Capa de servicios
 builder.Services.AddScoped<IIncidenciaService, IncidenciaService>();
 builder.Services.AddScoped<IViaService, ViaService>();
 builder.Services.AddScoped<IZonaService, ZonaService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
-// Registro del manejador global de errores
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails(); 
-
-// Registrar FluentValidation buscando los validadores del proyecto
-builder.Services.AddValidatorsFromAssemblyContaining<IncidenciaValidator>();
-    
 var app = builder.Build();
 
-// El middleware de excepciones siempre va primero
-app.UseExceptionHandler(); 
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
@@ -50,7 +112,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Direcciona las peticiones a los controladores
-app.MapControllers(); 
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+// Sembrar roles Ciudadano/Administrador al arrancar.
+using (var scope = app.Services.CreateScope())
+{
+    await RoleSeeder.SeedRolesAsync(scope.ServiceProvider);
+}
 
 app.Run();

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LimaFlow.Api.DTOs;
 using LimaFlow.Api.Models;
@@ -30,6 +31,7 @@ public class IncidenciasController : ControllerBase
 
     // POST: api/Incidencias
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<Incidencia>> CreateIncidencia(Incidencia incidencia)
     {
         var result = await _service.CreateAsync(incidencia);
@@ -48,6 +50,7 @@ public class IncidenciasController : ControllerBase
 
     // PUT: api/Incidencias/1/estado
     [HttpPut("{id}/estado")]
+    [Authorize(Roles = Roles.Administrador)]
     public async Task<IActionResult> CambiarEstado(int id, [FromBody] CambiarEstadoDto dto)
     {
         var result = await _service.ChangeEstadoAsync(id, dto.NuevoEstado);
